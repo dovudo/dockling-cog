@@ -7,7 +7,7 @@
 - **GPU:** RTX 4090 or RTX 3090 (24GB VRAM recommended)
 - **RAM:** 32GB+ recommended
 
-### 2. After Pod Starts
+### 2. Test Cog for Replicate
 
 ```bash
 # Connect to RunPod
@@ -20,13 +20,32 @@ cd /workspace
 git clone https://github.com/dovudo/dockling-cog.git
 cd dockling-cog
 
-# Run direct Python script (no Docker needed)
-python runpod_direct.py
+# Test Cog (this is what you need!)
+python test_cog_on_runpod.py
 ```
 
-### 3. Alternative Manual Setup
+### 3. Manual Cog Testing
 
-If you prefer manual setup:
+If you want to test Cog manually:
+
+```bash
+# Install Cog
+pip install cog
+
+# Test build
+cog build
+
+# Test predict with URL
+cog predict -i file_url="https://arxiv.org/pdf/2305.03393.pdf" -i to_formats=json
+
+# Test predict with file
+curl -o test.pdf https://arxiv.org/pdf/2305.03393.pdf
+cog predict -i file=@test.pdf -i to_formats=json
+```
+
+### 4. Alternative: Direct docling-serve
+
+If you want to test just docling-serve (not Cog):
 
 ```bash
 # Install dependencies
@@ -43,7 +62,7 @@ export CUDA_VISIBLE_DEVICES=0
 docling-serve run
 ```
 
-### 4. Test the Service
+### 5. Test the Service
 
 ```bash
 # Check if service is running
@@ -53,7 +72,7 @@ curl http://localhost:5001/docs
 python test_runpod.py
 ```
 
-### 5. API Usage
+### 6. API Usage
 
 ```bash
 # Test with URL
@@ -69,13 +88,41 @@ curl -X POST http://localhost:5001/v1alpha/convert/source \
 ## Files Structure
 ```
 dockling-cog/
-├── runpod_direct.py       # Direct Python runner (no Docker)
-├── test_runpod.py         # Test script
-├── predict.py             # Main application
-└── test_files/            # Test files directory
+├── test_cog_on_runpod.py   # Test Cog for Replicate compatibility
+├── runpod_direct.py        # Direct Python runner (no Docker)
+├── test_runpod.py          # Test script for docling-serve
+├── predict.py              # Main Cog application
+└── test_files/             # Test files directory
 ```
 
+## What Each Test Does
+
+### `test_cog_on_runpod.py` - Tests Cog for Replicate
+1. **Installs Cog** - same as on your local machine
+2. **Tests Cog build** - verifies Docker image builds correctly
+3. **Tests Cog schema** - checks input/output definitions
+4. **Tests Cog predict** - runs actual predictions with file/URL
+5. **Reports results** - tells you if it's ready for Replicate
+
+### `runpod_direct.py` - Tests docling-serve directly
+1. **Installs docling-serve** - without Cog wrapper
+2. **Starts service** - runs docling-serve directly
+3. **Tests API** - verifies the underlying service works
+
 ## Troubleshooting
+
+### If Cog tests fail:
+```bash
+# Check Cog installation
+which cog
+cog --version
+
+# Check Docker (if needed)
+docker --version
+
+# Check Python packages
+pip list | grep cog
+```
 
 ### If service doesn't start:
 ```bash
