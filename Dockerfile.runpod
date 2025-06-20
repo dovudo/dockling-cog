@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     wget \
     git \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python packages
@@ -13,18 +14,20 @@ RUN pip install --no-cache-dir \
     requests \
     python-multipart
 
+# Create app directory
+WORKDIR /app
+
 # Copy application files
 COPY predict.py /app/predict.py
 COPY cog.yaml /app/cog.yaml
-
-WORKDIR /app
 
 # Environment variables
 ENV DOCLING_SERVE_PORT=5001 \
     DOCLING_SERVE_MAX_SYNC_WAIT=600 \
     DOCLING_SERVE_ENG_KIND=local \
     DOCLING_SERVE_ENG_LOC_NUM_WORKERS=2 \
-    CUDA_VISIBLE_DEVICES=0
+    CUDA_VISIBLE_DEVICES=0 \
+    PYTHONUNBUFFERED=1
 
 # Expose port
 EXPOSE 5001
