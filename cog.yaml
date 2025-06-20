@@ -1,0 +1,7 @@
+predict: "predict.py:Predictor"
+
+build:
+  python_version: "3.12"
+  python_packages:
+    - "requests"
+    - "python-multipart" 

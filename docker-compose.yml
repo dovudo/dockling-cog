@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  dockling:
+    build:
+      context: .
+      dockerfile: Dockerfile.runpod
+    ports:
+      - "5001:5001"
+    environment:
+      - DOCLING_SERVE_PORT=5001
+      - DOCLING_SERVE_MAX_SYNC_WAIT=600
+      - DOCLING_SERVE_ENG_KIND=local
+      - DOCLING_SERVE_ENG_LOC_NUM_WORKERS=2
+      - CUDA_VISIBLE_DEVICES=0
+    volumes:
+      - ./test_files:/app/test_files
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s 
