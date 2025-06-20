@@ -1,4 +1,4 @@
-# RunPod Setup Instructions
+# RunPod Setup Instructions (No Docker)
 
 ## Quick Start
 
@@ -10,13 +10,18 @@
 ### 2. After Pod Starts
 
 ```bash
+# Connect to RunPod
+ssh l1m1ybn41rdld2-6441116e@ssh.runpod.io -i ~/.ssh/id_ed25519
+
+# Go to workspace
+cd /workspace
+
 # Clone your repository
 git clone https://github.com/dovudo/dockling-cog.git
 cd dockling-cog
 
-# Make script executable and run
-chmod +x runpod_start.sh
-./runpod_start.sh
+# Run direct Python script (no Docker needed)
+python runpod_direct.py
 ```
 
 ### 3. Alternative Manual Setup
@@ -24,24 +29,18 @@ chmod +x runpod_start.sh
 If you prefer manual setup:
 
 ```bash
-# Clone repository
-git clone https://github.com/dovudo/dockling-cog.git
-cd dockling-cog
+# Install dependencies
+pip install docling-serve requests python-multipart
 
-# Build Docker image
-docker build -f Dockerfile.runpod -t dockling-runpod .
+# Set environment variables
+export DOCLING_SERVE_PORT=5001
+export DOCLING_SERVE_MAX_SYNC_WAIT=600
+export DOCLING_SERVE_ENG_KIND=local
+export DOCLING_SERVE_ENG_LOC_NUM_WORKERS=2
+export CUDA_VISIBLE_DEVICES=0
 
-# Run container
-docker run -d \
-    --name dockling-container \
-    --gpus all \
-    -p 5001:5001 \
-    -e DOCLING_SERVE_PORT=5001 \
-    -e DOCLING_SERVE_MAX_SYNC_WAIT=600 \
-    -e DOCLING_SERVE_ENG_KIND=local \
-    -e DOCLING_SERVE_ENG_LOC_NUM_WORKERS=2 \
-    -e CUDA_VISIBLE_DEVICES=0 \
-    dockling-runpod
+# Start docling-serve
+docling-serve run
 ```
 
 ### 4. Test the Service
@@ -70,8 +69,7 @@ curl -X POST http://localhost:5001/v1alpha/convert/source \
 ## Files Structure
 ```
 dockling-cog/
-├── Dockerfile.runpod      # RunPod optimized Dockerfile
-├── runpod_start.sh        # Startup script for RunPod
+├── runpod_direct.py       # Direct Python runner (no Docker)
 ├── test_runpod.py         # Test script
 ├── predict.py             # Main application
 └── test_files/            # Test files directory
@@ -81,14 +79,16 @@ dockling-cog/
 
 ### If service doesn't start:
 ```bash
-# Check logs
-docker logs dockling-container
+# Check if docling-serve is installed
+which docling-serve
 
-# Check if port is available
+# Check Python packages
+pip list | grep docling
+
+# Check port availability
 netstat -tlnp | grep 5001
 
-# Restart container
-docker restart dockling-container
+# Check logs in the terminal where you ran the script
 ```
 
 ### If CUDA issues:
@@ -99,23 +99,20 @@ nvidia-smi
 # Check PyTorch CUDA
 python -c "import torch; print(torch.cuda.is_available())"
 
-# Check container GPU access
-docker exec dockling-container nvidia-smi
+# Check CUDA version
+nvcc --version
 ```
 
-### Container management:
+### If dependencies fail:
 ```bash
-# Stop container
-docker stop dockling-container
+# Update pip
+pip install --upgrade pip
 
-# Start container
-docker start dockling-container
+# Install with specific version
+pip install docling-serve==latest
 
-# Remove container
-docker rm dockling-container
-
-# View logs
-docker logs -f dockling-container
+# Check Python version
+python --version
 ```
 
 ## Performance Tips
@@ -123,4 +120,22 @@ docker logs -f dockling-container
 - Use `DOCLING_SERVE_ENG_LOC_NUM_WORKERS=1` for single GPU
 - Set `CUDA_VISIBLE_DEVICES=0` for first GPU
 - Monitor GPU usage with `nvidia-smi`
-- Use `docker stats dockling-container` to monitor resource usage 
+- Use `htop` to monitor CPU and memory usage
+
+## Running in Background
+
+To run the service in the background:
+
+```bash
+# Start in background
+nohup python runpod_direct.py > docling.log 2>&1 &
+
+# Check if running
+ps aux | grep docling
+
+# View logs
+tail -f docling.log
+
+# Stop background process
+pkill -f "python runpod_direct.py"
+``` 
